@@ -16,7 +16,7 @@ func DB() *gorm.DB {
 }
 
 func ConnectionDB() {
-	database, err := gorm.Open(sqlite.Open("cinema.db?cache=shared"), &gorm.Config{})
+	database, err := gorm.Open(sqlite.Open("sa.db?cache=shared"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -26,25 +26,18 @@ func ConnectionDB() {
 
 func SetupDatabase() {
 
-	// ตรวจสอบการเชื่อมต่อฐานข้อมูล
-	if db == nil {
-		fmt.Println("Database connection failed")
-	} else {
-		fmt.Println("Database connected successfully")
-	}
-
-	// AutoMigrate สำหรับทุก entity พร้อมตรวจสอบการทำงาน
+	// AutoMigrate สำหรับทุก entity
 	err := db.AutoMigrate(
-		&entity.Member{},
 		&entity.Gender{},
+		&entity.Member{},
 		&entity.Movie{},
 		&entity.Theater{},
 		&entity.ShowTimes{},
-		&entity.Ticket{},
-		&entity.Seat{},       // ตรวจสอบว่ามีการสร้างตารางที่นั่ง
+		&entity.Seat{},     // สร้างหลัง Theater เพราะมี foreign key เชื่อมโยง
+		&entity.Booking{},  // สร้างหลังจากที่ Member และ Movie ถูกสร้างแล้ว
+		&entity.BookSeat{}, // สร้างหลังจาก Seat และ Booking
 		&entity.Payment{},
-		&entity.BookSeat{},
-		&entity.Booking{},
+		&entity.Ticket{}, // สร้างหลังจาก BookSeat และ Booking
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
@@ -59,20 +52,36 @@ func SetupDatabase() {
 	db.FirstOrCreate(&GenderMale, &entity.Gender{Name: "Male"})
 	db.FirstOrCreate(&GenderFemale, &entity.Gender{Name: "Female"})
 
-	// สร้างข้อมูลสมาชิก
+	// สร้างข้อมูลสมาชิกคนที่หนึ่ง (sa@gmail.com)
 	hashedPassword, _ := HashPassword("123456")
-	Member := &entity.Member{
-		UserName:   "user1",
-		FirstName:  "John",
-		LastName:   "Doe",
-		Email:      "john.doe@example.com",
+	Member1 := &entity.Member{
+		UserName:   "sa1",
+		FirstName:  "Software1",
+		LastName:   "Analysis1",
+		Email:      "sa@gmail.com",
 		Password:   hashedPassword,
 		GenderID:   GenderMale.ID,
-		TotalPoint: 100,
+		TotalPoint: 10,
 		Role:       "customer",
 	}
-	db.FirstOrCreate(Member, &entity.Member{
-		Email: "john.doe@example.com",
+	db.FirstOrCreate(Member1, &entity.Member{
+		Email: "sa@gmail.com",
+	})
+
+	// สร้างข้อมูลสมาชิกคนที่สอง (sa2@gmail.com)
+	hashedPassword2, _ := HashPassword("123456")
+	Member2 := &entity.Member{
+		UserName:   "sa2",
+		FirstName:  "Software2",
+		LastName:   "Analysis2",
+		Email:      "sa2@gmail.com",
+		Password:   hashedPassword2,
+		GenderID:   GenderMale.ID,
+		TotalPoint: 5,
+		Role:       "customer",
+	}
+	db.FirstOrCreate(Member2, &entity.Member{
+		Email: "sa2@gmail.com",
 	})
 
 	// สร้างข้อมูลภาพยนตร์ 3 เรื่อง
@@ -128,7 +137,7 @@ func SetupDatabase() {
 	// สร้างข้อมูลการฉายภาพยนตร์
 	showTimes := []entity.ShowTimes{
 		{ShowDate: time.Date(2024, 10, 28, 14, 0, 0, 0, time.UTC), MovieID: movies[0].ID, TheaterID: theaters[0].ID},
-		{ShowDate: time.Date(2024, 10, 28, 16, 0, 0, 0, time.UTC), MovieID: movies[1].ID, TheaterID: theaters[1].ID},
+		{ShowDate: time.Date(2024, 10, 28, 16, 0, 0, 0, time.UTC), MovieID: movies[0].ID, TheaterID: theaters[0].ID},
 		{ShowDate: time.Date(2024, 10, 29, 12, 0, 0, 0, time.UTC), MovieID: movies[2].ID, TheaterID: theaters[2].ID},
 	}
 
@@ -138,10 +147,10 @@ func SetupDatabase() {
 		}
 	}
 
-	// สร้าง tickets สำหรับสมาชิกที่ 1
+	// สร้าง tickets สำหรับสมาชิกที่สอง (Member2) ในทั้งสองรอบการฉาย
 	tickets := []entity.Ticket{
-		{Point: 10, Status: "Booked", MemberID: Member.ID},
-		{Point: 15, Status: "Booked", MemberID: Member.ID},
+		{Point: 10, Status: "Booked", MemberID: Member2.ID},
+		{Point: 15, Status: "Booked", MemberID: Member2.ID},
 	}
 
 	for i := range tickets {
@@ -150,12 +159,12 @@ func SetupDatabase() {
 		}
 	}
 
-	// สร้าง payments และเชื่อมโยง ticket_id ที่ถูกต้อง
+	// สร้าง payments และเชื่อมโยง ticket_id ที่ถูกต้องสำหรับสมาชิกที่สอง
 	now := time.Now()
 
 	payments := []entity.Payment{
-		{TotalPrice: 600, Status: "Paid", PaymentTime: now, MemberID: Member.ID, TicketID: tickets[0].ID},
-		{TotalPrice: 900, Status: "Paid", PaymentTime: now, MemberID: Member.ID, TicketID: tickets[1].ID},
+		{TotalPrice: 600, Status: "Paid", PaymentTime: now, MemberID: Member2.ID, TicketID: tickets[0].ID},
+		{TotalPrice: 900, Status: "Paid", PaymentTime: now, MemberID: Member2.ID, TicketID: tickets[1].ID},
 	}
 
 	for i := range payments {
@@ -166,37 +175,83 @@ func SetupDatabase() {
 		}
 	}
 
-	// สร้างการจองและเชื่อมโยงกับที่นั่งและการฉายภาพยนตร์ที่สอดคล้องกัน
-	seatNumbersForBooking := []string{"A1", "A2", "A3"}
-	for _, seatNo := range seatNumbersForBooking {
-		// ค้นหาที่นั่งในโรงภาพยนตร์ที่ถูกต้อง
-		var seat entity.Seat
-		if err := db.Where("seat_no = ? AND theater_id = ?", seatNo, theaters[0].ID).First(&seat).Error; err != nil {
-			fmt.Printf("Error finding seat: %s\n", err)
-			continue
-		}
-
-		// ตรวจสอบสถานะที่นั่งก่อนการจอง
-		if seat.Status != "Available" {
-			fmt.Printf("Seat %s is not available\n", seatNo)
-			continue
-		}
-
-		booking := entity.Booking{
-			MemberID:    Member.ID,
-			ShowTimeID:  showTimes[0].ID, // เชื่อมโยงกับการฉายภาพยนตร์ที่ถูกต้อง
-			SeatID:      seat.ID,
-			BookingTime: time.Now(),
-			Status:      "confirmed",
-		}
-
-		if err := db.Create(&booking).Error; err != nil {
-			fmt.Printf("Error creating booking: %s\n", err)
-		}
-
-		// อัปเดตสถานะที่นั่งหลังจากการจอง
-		db.Model(&seat).Update("Status", "Booked")
+	// สร้างการจอง (Booking) และ BookSeat สำหรับสมาชิกที่สอง (Member2) ทั้งสองรอบ
+	// สร้างการจอง (Booking) และ BookSeat สำหรับสมาชิกที่สอง (Member2) ในรอบแรก
+seatNumbersForBooking := []string{"A1", "A2", "A3"}  // เลือกที่นั่งที่ต้องการจองในรอบแรก
+for _, seatNo := range seatNumbersForBooking {
+	// ค้นหาที่นั่งในโรงภาพยนตร์ที่ถูกต้อง
+	var seat entity.Seat
+	if err := db.Where("seat_no = ? AND theater_id = ? AND id NOT IN (SELECT seat_id FROM bookings WHERE show_time_id = ?)", seatNo, theaters[0].ID, showTimes[0].ID).First(&seat).Error; err != nil {
+		fmt.Printf("Error finding seat: %s\n", err)
+		continue
 	}
+
+	// สร้างการจองสำหรับ ShowTime ที่ 1
+	booking := entity.Booking{
+		MemberID:    Member2.ID,
+		ShowTimeID:  showTimes[0].ID, // เชื่อมโยงกับ ShowTime ที่ 1
+		SeatID:      seat.ID,
+		TicketID:    tickets[0].ID, // เชื่อมโยงกับ Ticket ที่ 1
+		BookingTime: time.Now(),
+		Status:      "confirmed",
+	}
+
+	if err := db.Create(&booking).Error; err != nil {
+		fmt.Printf("Error creating booking: %s\n", err)
+	}
+
+	// เพิ่ม BookSeat สำหรับการจองในรอบแรก
+	bookSeat := entity.BookSeat{
+		SeatID:    seat.ID,
+		BookingID: booking.ID,
+	}
+
+	if err := db.Create(&bookSeat).Error; err != nil {
+		fmt.Printf("Error creating book seat: %s\n", err)
+	}
+
+	// อัปเดตสถานะที่นั่งหลังจากการจอง
+	db.Model(&seat).Update("Status", "Booked")
+}
+
+// สร้างการจอง (Booking) และ BookSeat สำหรับสมาชิกที่สอง (Member2) ในรอบที่สอง
+seatNumbersForBookingRound2 := []string{"A1", "A2"}  // เลือกที่นั่งที่ต้องการจองในรอบที่สอง
+for _, seatNo := range seatNumbersForBookingRound2 {
+	// ค้นหาที่นั่งในโรงภาพยนตร์ที่ถูกต้องและไม่ได้ถูกจองใน ShowTime นี้
+	var seat entity.Seat
+	if err := db.Where("seat_no = ? AND theater_id = ? AND id NOT IN (SELECT seat_id FROM bookings WHERE show_time_id = ?)", seatNo, theaters[0].ID, showTimes[1].ID).First(&seat).Error; err != nil {
+		fmt.Printf("Error finding seat: %s\n", err)
+		continue
+	}
+
+	// สร้างการจองสำหรับ ShowTime ที่ 2
+	bookingRound2 := entity.Booking{
+		MemberID:    Member2.ID,
+		ShowTimeID:  showTimes[1].ID,  // เชื่อมโยงกับ ShowTime ที่ 2
+		SeatID:      seat.ID,
+		TicketID:    tickets[1].ID, // เชื่อมโยงกับ Ticket ที่ 2
+		BookingTime: time.Now(),
+		Status:      "confirmed",
+	}
+
+	if err := db.Create(&bookingRound2).Error; err != nil {
+		fmt.Printf("Error creating booking for round 2: %s\n", err)
+	}
+
+	// เพิ่ม BookSeat สำหรับการจองในรอบที่สอง
+	bookSeatRound2 := entity.BookSeat{
+		SeatID:    seat.ID,
+		BookingID: bookingRound2.ID,
+	}
+
+	if err := db.Create(&bookSeatRound2).Error; err != nil {
+		fmt.Printf("Error creating book seat for round 2: %s\n", err)
+	}
+
+	// อัปเดตสถานะที่นั่งหลังจากการจอง
+	db.Model(&seat).Update("Status", "Booked")
+}
+
 
 	fmt.Println("Database setup complete")
 }
