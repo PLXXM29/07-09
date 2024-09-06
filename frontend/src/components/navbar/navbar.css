@@ -1,0 +1,49 @@
+.header {
+    background-color: #ffcc00;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin: 0;
+    position: fixed;
+    top: 0;
+    left: 0;  /* เพิ่มเพื่อให้ Navbar ชิดขอบด้านซ้าย */
+    right: 0; /* เพิ่มเพื่อให้ Navbar กว้างเต็มหน้าจอ */
+    z-index: 1000; /* ทำให้ Navbar อยู่ด้านหน้าเนื้อหาอื่น ๆ */
+}
+
+
+.logo {
+    color: #001529;
+    font-size: 26px;
+    font-weight: bold;
+    margin-right: auto;
+    font-family: Arial, sans-serif;
+}
+
+.menu {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+}
+
+.link {
+    color: #001529;
+    font-size: 16px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s;
+    font-family: Arial, sans-serif;
+}
+
+.button {
+    background-color: #001529;
+    color: #ffcc00;
+    border-color: #001529;
+    font-weight: bold;
+    border-radius: 5px;
+    padding: 5px 15px;
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    margin-left: auto;
+}

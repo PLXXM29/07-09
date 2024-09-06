@@ -1,0 +1,37 @@
+.ticket-container {
+    padding: 20px 50px;
+    background-color: black;
+    min-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+  }
+  
+  .ticket-title {
+    color: #ffcc00;
+    margin-bottom: 20px;
+    font-size: 32px;
+    text-align: center;
+  }
+  
+  .ticket-table {
+    background-color: #001529;
+    border-color: #ffcc00;
+    border-radius: 10px; /* ทำให้ขอบตารางโค้งมน */
+    overflow: hidden; /* ป้องกันการล้นออกมา */
+  }
+  
+  .ant-table-thead > tr > th {
+    background-color: #001529 !important;
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .ant-table-row.row-light {
+    background-color: #ffffff;
+  }
+  
+  .ant-table-row.row-dark {
+    background-color: #e0e0e0;
+  }
+  
